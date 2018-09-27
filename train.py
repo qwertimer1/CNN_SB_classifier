@@ -3,10 +3,10 @@ import json
 import logging
 import argparse
 import torch
-from model.model import *
-from model.loss import *
-from model.metric import *
-from data_loaders import ImageDataLoader
+from model.model import get_model_instance
+from model.loss import get_loss_function
+from model.metric import get_metric_functions
+from data_loader import get_data_loader
 from trainer import Trainer
 from logger import Logger
 
@@ -16,14 +16,15 @@ logging.basicConfig(level=logging.INFO, format='')
 def main(config, resume):
     train_logger = Logger()
 
-    data_loader = ImageDataLoader(config)
+    data_loader = get_data_loader(config)
     valid_data_loader = data_loader.split_validation()
 
-    model = eval(config['arch'])(config['model'])
+    model = get_model_instance(model_arch=config['arch'],
+                               model_params=config['model'])
     model.summary()
 
-    loss = eval(config['loss'])
-    metrics = [eval(metric) for metric in config['metrics']]
+    loss = get_loss_function(config['loss'], **config['loss_args'])
+    metrics = get_metric_functions(config['metrics'])
 
     trainer = Trainer(model, loss, metrics,
                       resume=resume,
@@ -39,22 +40,19 @@ if __name__ == '__main__':
     logger = logging.getLogger()
 
     parser = argparse.ArgumentParser(description='PyTorch Template')
-    parser.add_argument('-c', '--config', default=None, type=str,
-                        help='config file path (default: None)')
-    parser.add_argument('-r', '--resume', default=None, type=str,
-                        help='path to latest checkpoint (default: None)')
+    arg_group = parser.add_mutually_exclusive_group(required=True)
+    arg_group.add_argument('-c', '--config', default=None, type=str,
+                           help='config file path (default: None)')
+    arg_group.add_argument('-r', '--resume', default=None, type=str,
+                           help='path to latest checkpoint (default: None)')
 
     args = parser.parse_args()
 
-    config = None
-    if args.resume is not None:
-        if args.config is not None:
-            logger.warning('Warning: --config overridden by --resume')
+    if args.resume:
         config = torch.load(args.resume)['config']
-    elif args.config is not None:
+    else:
         config = json.load(open(args.config))
         path = os.path.join(config['trainer']['save_dir'], config['name'])
         assert not os.path.exists(path), "Path {} already exists!".format(path)
-    assert config is not None
 
     main(config, args.resume)
