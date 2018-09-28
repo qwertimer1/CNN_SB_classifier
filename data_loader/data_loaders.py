@@ -2,7 +2,10 @@ import torch
 import numpy as np
 from torchvision import datasets, transforms
 from base import BaseDataLoader
-from .image_dataset import image_dataset
+
+#from .image_dataset import image_dataset
+from .dataset_class import image_dataset, audio_dataset
+
 
 
 
@@ -42,6 +45,24 @@ class ImageDataLoader(BaseDataLoader):
             transforms.Normalize((0.1307,), (0.3081,))
             ])
         self.data_dir = config['data_loader']['data_dir']
-        self.dataset = 
+        self.img_path = config['data_loader']['img_path']
+        self.img_filename = config['data_loader']['img_filename']
+        self.label_filename = config['data_loader']['label_filename']
+        self.imagedataset = config['data_loader']['image_dataset']
+        self.dataset = self.image_dataset(self.data_dir, self.img_path, self.img_filename, self.label_filename, transform=None)
         super(ImageDataLoader, self).__init__(self.dataset, config)
         
+
+
+class AudioDataloader(BaseDataLoader):
+    """
+    Standard Audio dataloader from file
+    """
+    def __init__(self, config):
+        trsfm = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.1307,), (0.3081,))
+            ])
+        self.data_dir = config['data_loader']['data_dir']
+        self.dataset = audio_dataset()
+        super(AudioDataLoader, self).__init__(self.dataset, config)

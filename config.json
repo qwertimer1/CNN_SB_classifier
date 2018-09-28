@@ -5,6 +5,7 @@
     "data_loader": {
         "type": "ImageDataLoader",
         "data_dir": "datasets/",
+        
         "batch_size": 32,
         "shuffle": true
     },
